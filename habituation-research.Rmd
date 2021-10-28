@@ -1,5 +1,5 @@
 ---
-title: "Habituation Research"
+title: "Habituation Data - Background and Analysis Notes"
 author: "Laura Brubaker-Wittman"
 date: "10/28/2021"
 output: html_document
@@ -9,22 +9,18 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+# Background
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+This project investigate the process of habituation in Bornean orangutans in Gunung Palung National Park in West Kalimantan, Borneo, Indonesia. Specifically, it explores questions regarding orangutan behaviors during habituation, viewing these as strategies employed by the orangutan to evade humans until they become more habituated to our presence. These strategies include *hiding,* *vocalizing,* and *traveling.* Specifically, we look at the differences in these strategies between age-sex classes (e.g. ung=flanged males, adolescent females, etc.), and in the presence of offspring or other conspecifics. Furthermore, these strategies employ different levels of energy expenditure (i.e. traveling is more energetically costly than hiding). We explore if fruit availability at the time of habituation impacts which strategy is employed by orangutans, as part of a trade off decision as proposed by life history theory.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Research Questions
 
-```{r cars}
-summary(cars)
-```
+This research asks the following questions:
 
-## Including Plots
+1. Can we determine, based on percentage of time spent in specific activities and behaviors, if orangutans are habituated or not?
+2. Is there a difference in strategies employed by the various age-sex classes?
+3. Do mothers with offspring employ different strategies than when they are without offspring?
+4. Does the presence of conspecifics that are not offspring impact which strategy is used?
+5. Does fruit availability impact the strategy employed?
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Sub-sampling Data and Exclusion Criteria
