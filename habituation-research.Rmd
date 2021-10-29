@@ -2,7 +2,10 @@
 title: "Habituation Data - Background and Analysis Notes"
 author: "Laura Brubaker-Wittman"
 date: "10/28/2021"
-output: html_document
+output: 
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
 ---
 
 ```{r setup, include=FALSE}
@@ -24,3 +27,297 @@ This research asks the following questions:
 5. Does fruit availability impact the strategy employed?
 
 ## Sub-sampling Data and Exclusion Criteria
+
+Since hiding, traveling, and vocalizing are all normal parts of an orangutan's behavioral repertoire, we first had to determine cutoffs for percentage of time spent in these behaviors that would indicate an excessive percentage of amount of time (or lack thereof) spent in one of these activities. If an orangutan's percentage of time spent in oen of these behaviors is outside of these cutoffs for the range of "habituated" behavior, then we can assume that individual orangutan is unhabituated and furthermore, is using one or more strategies to evade humans.
+
+In order to create a sub-sample of the data that we could use to create the ranges for percentage of time spent in specific activities for habituated orangutans, we first had to determine exclusion criteria to ensure we were not including unhabituated behavior data in the creation of these ranges. 
+
+**Exclusion Criteria:**
+
+*Exclude if:*
+
+1. The follow is one of the first ten (10) days that a specific orangutan is being followed, *unless they are already marked as habituated during the entirety of those first ten days. This happens when an orangutan changes age-sex class, or if they were previously unidentified, became habituated, and were then given a name.*
+2. The follow is after a six- (6) or more month gap from the previous follow series. *Exclude this entire follow series.*
+3. The follow has a vocalization score of 4 or higher (out of 10).
+4. The follow is less than 4 hours long (240 minues).
+5. The follow does not fit any of the other criteria but both the field assessment and statistical reassessment of the data indicates that the animal is unhabituated for another reason.
+
+By enacting this exclusion criteria to only include days we can conservatively say an individual orangutan is habituated, we can use this sub-sample to create ranges of "normal" or "habituated" percentage of time spent in specific activities.
+
+## Analyzing "Habituated" Sub-Sample to Create Behavior Ranges and Cutoffs
+
+In this section, I will go through the steps taken in *FileMaker*, *Excel*, and *R* to find averages and standard deviations (with more than 2 standard deviations being the cutoffs) for habituated orangutan behavior by age-sex class.
+
+1. Once each follow day was marked as *Included* or *Excluded* following the exclusion criteria laid out above, the data for the Included follow days was extracted from FileMaker into an Excel spreadsheet. 
+
+2. These data were uploaded into R.
+  a. Unflanged Males spreadsheet was cleaned and prepped for R. This included removing spaces in any fields, shortening field names, and adjusting for all numbers to have two places after a decimal point (to the hundredths place).
+  b. Using the {readxl} package, I imported the data into R for Unflanged Males
+
+```{r}
+library("readxl")
+require(readxl)
+d <- read_excel("28-10-2021 - Unflanged Males Export - 24 Oct 2021 - LBW Cleanup.xlsx", sheet = 1, col_names = TRUE) #I only had to put in the name of the file since it is in my working directory.
+head(d)
+```
+
+3. Before performing other analyses, I want to make sure the data I am using looks like a normal distribution, since I will be using this assumption with two standard deviations from the average working as my cutoffs.Due to the central limit theorem and my large dataset, I am not worried about this, but it also is nice just to see the way the data looks. 
+
+```{r}
+library(ggpubr)
+library(dplyr)
+ggdensity(d$Percent.time.feeding,
+          main = "Density plot of percent time feeding",
+          xlab = "Percent Time Feeding")
+ggqqplot(d$Percent.time.feeding)
+shapiro.test(d$Percent.time.feeding)
+```
+The results of all of these tests show that my "Percentage of Time Spent Feeding" data is normally distributed. Let's check the other data as well.
+
+**Percentage of Time Spent Sleeping**
+
+```{r}
+ggdensity(d$Percent.time.sleep,
+          main = "Density plot of percent time sleeping",
+          xlab = "Percent Time Sleeping")
+ggqqplot(d$Percent.time.sleep)
+shapiro.test(d$Percent.time.sleep)
+```
+
+**Percentage of Time Spent Resting**
+```{r}
+ggdensity(d$Percent.time.rest,
+          main = "Density plot of percent time resting",
+          xlab = "Percent Time Resting")
+ggqqplot(d$Percent.time.rest)
+shapiro.test(d$Percent.time.rest)
+```
+
+**Percent Time Traveling**
+
+```{r}
+ggdensity(d$Percent.tim.travel,
+          main = "Density plot of percent time traveling",
+          xlab = "Percent Time Traveling")
+ggqqplot(d$Percent.tim.travel)
+shapiro.test(d$Percent.tim.travel)
+```
+
+**Percentage of time Vocalizing**
+
+```{r}
+ggdensity(d$Vocalization.per.time.awake,
+          main = "Density plot of percent time vocalizing while awake",
+          xlab = "Percent Time Vocalizing")
+ggqqplot(d$Vocalization.per.time.awake)
+shapiro.test(d$Vocalization.per.time.awake)
+```
+
+After running my tests, it looks like a few of these are not normal distributions. So instead of finding standard deviation for those, I will use percentiles to the equal percentiles represented by standard deviation, 2.5% and 97.5% respectively. The one belows is for Percent Time Vocalizing while awake. This one is difficult because this are very low numbers.
+
+```{r}
+quantile(d$Vocalization.per.time.awake, c(.025, .975)) 
+```
+Or, we can see if a log transformation would be more useful.
+
+```{r}
+VocalLog <- log(d$Vocalization.per.time.awake)
+ggdensity(VocalLog)
+ggqqplot(VocalLog)
+hist(VocalLog)
+```
+
+This looks much better. Not sure if it is useful though? Maybe we try a different variable for vocalizations?
+
+Instead, let's go back to one of the other variables to see if we can find cutoffs. I am most interested in time traveling, so let's try that. Looking at the statistics we ran above, the distribution is not quite normal, with a positive skew. Let's see what we can get for the 2.5% and 97.5% percentiles.
+
+```{r}
+quantile(d$Percent.tim.travel, c(.025, .975)) 
+
+```
+
+Let's go ahead and use these as our cutoffs for traveling.
+
+Next, let's do time spent resting, which includes time asleep (which means we probably won't need the sleeping data for now).
+
+Time resting looks closer to normal, though the Shapiro test says it isn't quite. Let's do percentiles and standard deviations and see what we get.
+
+```{r}
+quantile(d$Percent.time.rest, c(.025, .975)) 
+sd (d$Percent.time.rest)
+max(d$Percent.time.rest) - sd (d$Percent.time.rest)
+```
+Looks like they are pretty close! Because it is slightly skewed, I will use the cutoffs from using the percentiles.
+
+Even though eating is not a strategy per se, I do want to see if they are eating less when they are unhabituated due to traveling more, additional stress from our presence, etc. So let's do all of our descriptive stats for that as well.
+
+**Percent Time Eating**
+
+```{r}
+ggdensity(d$Percent.time.feeding,
+          main = "Density plot of percent time feeding",
+          xlab = "Percent Time Feeding")
+ggqqplot(d$Percent.time.feeding)
+shapiro.test(d$Percent.time.feeding)
+```
+
+This data looks normally distributed and this is confirmed by the Shapiro-Wilk test. Yay! Now let's find the standard deviations/percentiles for our cutoffs.
+
+```{r}
+sd (d$Percent.time.feeding)
+max(d$Percent.time.feeding) - sd (d$Percent.time.feeding)
+```
+
+Great! So my next step is to go through all of the *Excluded* follows in Filemaker, which should be conservatively demonstrating the follows during which an individual was unhabituated and use these cutoffs to see which strategies they might be using. Perhaps for vocalizing, it can just be if it is four or more for the vocalizaton score since that was our cutoff for the exclusion criteria?
+
+Here is a table with the cutoffs for unflanged males:
+
+```{r}
+UFM_Cutoff<- read_excel("28-10-2021 - Percentage in Behavior Cutoffs for UFM.xlsx", sheet = 1, col_names = TRUE) 
+UFM_Cutoff
+```
+
+## Flanged Males
+
+Let's do the same thing above for flanged males and adult females. First, we will import the data from Excel.
+
+```{r}
+FM <- read_excel("28-10-2021 - Flanged Males Export - 24 Oct 2021 - LBW Cleanup.xlsx", sheet = 1, col_names = TRUE)
+head(FM)
+```
+
+Next, we will check the normality of traveling, resting, and feeding.
+
+**Percent Time Traveling**
+
+```{r}
+ggdensity(FM$Percent.time.travel,
+          main = "Density plot of percent time traveling",
+          xlab = "Percent Time Traveling")
+ggqqplot(FM$Percent.time.travel)
+shapiro.test(FM$Percent.time.travel)
+```
+
+It's skewed, so we will use percentiles.
+
+```{r}
+quantile(FM$Percent.time.travel, c(.025, .975)) 
+```
+
+Great, now I will move on to percentage of time spent resting during a follow.
+
+**Percent Time Resting**
+
+```{r}
+ggdensity(FM$Percent.time.rest ,
+          main = "Density plot of percent time resting",
+          xlab = "Percent Time Resting")
+ggqqplot(FM$Percent.time.rest)
+shapiro.test(FM$Percent.time.rest)
+```
+
+Let's do percentiles for this one as well.
+
+```{r}
+quantile(FM$Percent.time.rest, c(.025, .975)) 
+```
+
+Ok, now for feeding!
+
+```{r}
+ggdensity(FM$Percent.time.feeding ,
+          main = "Density plot of percent time feeding",
+          xlab = "Percent Time Feeding")
+ggqqplot(FM$Percent.time.feeding)
+shapiro.test(FM$Percent.time.feeding)
+```
+
+The distribution for time spent feeding is actually pretty normal! Let's do both SD and percentiles to see how close they are...
+
+```{r}
+quantile(FM$Percent.time.feeding, c(.025, .975)) 
+sd (FM$Percent.time.feeding)
+max(FM$Percent.time.feeding) - sd (FM$Percent.time.feeding)
+```
+
+Hmmmmm... they are close but a bit different. And it looks like it did not "pass" the Shapiro-Wilks normality test. So, le'ts use the percentiles as cut-offs.
+
+As with the unflanged males, we will use a vocalization score of 4 or above for our cut-off.
+
+Here is a chart with our cutoffs for flanged males:
+
+```{r}
+FM_Cutoff<- read_excel("28-10-2021 - Percentage in Behavior Cutoffs for FM.xlsx", sheet = 1, col_names = TRUE) 
+FM_Cutoff
+```
+
+And last but not least, I will do the same for adult females.
+
+##Adult Females
+
+First, let's import the cleaned up data. This includes removing data for Jumi, as she has never given birth. Adult females include all females who have given birth (versus nulliparous adolescents). As with the others, I also deleted rows that had zeros for all data, as these should be excluded from the analysis.
+
+```{r}
+AF <- read_excel("28-10-2021 - Adult Females Export - 24 Oct 2021 - LBW Cleanup.xlsx", sheet = 1, col_names = TRUE)
+head(AF)
+```
+
+Looks good! Now let's find our cutoffs.
+
+**Percent Time Traveling**
+
+```{r}
+ggdensity(AF$Percent.time.travel,
+          main = "Density plot of percent time traveling",
+          xlab = "Percent Time Traveling")
+ggqqplot(AF$Percent.time.travel)
+shapiro.test(AF$Percent.time.travel)
+```
+
+Very skewed! So let's find percentiles.
+
+```{r}
+quantile(AF$Percent.time.travel, c(.025, .975)) 
+```
+
+Now on to percent time resting!
+
+**Percent Time Resting**
+
+```{r}
+ggdensity(AF$Percent.time.rest ,
+          main = "Density plot of percent time resting",
+          xlab = "Percent Time Resting")
+ggqqplot(AF$Percent.time.rest)
+shapiro.test(AF$Percent.time.rest)
+```
+
+Skewed again! Let's check the percentiles.
+
+```{r}
+quantile(AF$Percent.time.rest, c(.025, .975)) 
+```
+
+Next up: Percent time feeding
+
+```{r}
+ggdensity(AF$Percent.time.feeding ,
+          main = "Density plot of percent time feeding",
+          xlab = "Percent Time Feeding")
+ggqqplot(AF$Percent.time.feeding)
+shapiro.test(AF$Percent.time.feeding)
+```
+
+Perhaps closer to normal, but let's do percentiles.
+
+```{r}
+quantile(AF$Percent.time.feeding, c(.025, .975)) 
+```
+
+All done for adult females! And here is the cutoff chart:
+
+```{r}
+AF_Cutoff<- read_excel("28-10-2021 - Percentage in Behavior Cutoffs for AF.xlsx", sheet = 1, col_names = TRUE) 
+AF_Cutoff
+```
+
